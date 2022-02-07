@@ -1,15 +1,16 @@
-
 from nltk.corpus import stopwords
 from nltk.cluster.util import cosine_distance
 import numpy as np
 import networkx as nx
+import re
 
 def organize_tweets(tweets_list):
     article=[]
     for tweet in tweets_list:
         for sentence in tweet.split(". "):
-            article.append(sentence)
-    
+            withOutLinks = re.sub(r'http\S+', '', sentence)
+            article.append(withOutLinks)
+
     sentences = []
     for sentence in article:
         sentences.append(sentence.replace("[^a-zA-Z]", " ").split(" "))
@@ -58,17 +59,18 @@ def build_summary_tweets(ranked_sentences, tweet_limit):
     summary_tweets = []
     summary_text = "SUMMARY: "
     for sentence in ranked_sentences:
-        fullSentence = " ".join(sentence[1])
-        if len(summary_tweets) < tweet_limit:
-            if (current_chars + len(fullSentence)) > char_limit:
-                summary_tweets.append(summary_text)
-                summary_text = fullSentence
-                current_chars = 0
+        if len(sentence[1]) > 1:
+            fullSentence = " ".join(sentence[1])
+            if len(summary_tweets) < tweet_limit:
+                if (current_chars + len(fullSentence)) > char_limit:
+                    summary_tweets.append(summary_text)
+                    summary_text = fullSentence
+                    current_chars = 0
+                else:
+                    summary_text += fullSentence
+                    current_chars += len(fullSentence)
             else:
-                summary_text += fullSentence
-                current_chars += len(fullSentence)
-        else:
-            return summary_tweets
+                return summary_tweets
 
 def generate_summary(tweets_list, tweet_limit):
     stop_words = stopwords.words('english')
